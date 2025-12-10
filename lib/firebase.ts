@@ -2,16 +2,16 @@ import { getAuth } from "firebase/auth";
 import { initializeApp } from "firebase/app";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC4QwNDwrS639M5iCPSbalV2n-EjIYslpE",
-  authDomain: "ca-firebase-auth-daa08.firebaseapp.com",
-  projectId: "ca-firebase-auth-daa08",
-  storageBucket: "ca-firebase-auth-daa08.firebasestorage.app",
-  messagingSenderId: "579675062266",
-  appId: "1:579675062266:web:860c78a9c1b36e89c5ee43",
-  measurementId: "G-NMRBP1BXDJ"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "",
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-export { auth , app};
+export { auth, app };

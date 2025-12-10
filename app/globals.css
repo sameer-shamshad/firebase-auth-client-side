@@ -24,8 +24,7 @@
   --color-primary-foreground: var(--primary-text-color);
   --color-secondary-foreground: var(--secondary-text-color);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-jakarta-sans: var(--font-jakarta-sans);
 
   --color-primary: var(--main-color);
   --color-secondary: var(--white-color);
@@ -33,15 +32,14 @@
   --color-border: var(--border-color);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-jakarta-sans), Arial, Helvetica, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+i {
+  font-size: 24px;
+  background: transparent;
+  color: var(--main-color);
 }

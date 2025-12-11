@@ -58,11 +58,13 @@ export default function RegisterPage() {
     <div className="flex flex-col items-center h-screen py-8 px-4 sm:px-0 sm:py-20">
       <form 
         onSubmit={handleSubmit} 
-        className="w-full max-w-sm border border-border p-4 rounded-2xl flex flex-col gap-3 
+        className="w-full max-w-sm border border-border bg-background p-4 rounded-2xl flex flex-col gap-3 
         [&>div>label]:mb-1 [&>div>label]:block [&>div>label]:text-sm [&>div>label]:font-medium 
         [&>div>label]:text-primary-foreground [&>div>input]:w-full [&>div>input]:rounded-md 
-        [&>div>input]:border [&>div>input]:px-3 [&>div>input]:py-2 [&>div>input]:focus:outline-none 
-        [&>div>input]:focus:ring-2 [&>div>input]:disabled:cursor-not-allowed [&>div>input]:disabled:opacity-50"
+        [&>div>input]:border [&>div>input]:border-border [&>div>input]:bg-background 
+        [&>div>input]:text-primary-foreground [&>div>input]:px-3 [&>div>input]:py-2 
+        [&>div>input]:focus:outline-none [&>div>input]:focus:ring-2 [&>div>input]:focus:ring-primary 
+        [&>div>input]:disabled:cursor-not-allowed [&>div>input]:disabled:opacity-50"
       >
         <header className="text-3xl font-extrabold text-primary-foreground text-center">
           Sign Up

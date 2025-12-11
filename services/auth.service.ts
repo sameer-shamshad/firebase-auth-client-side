@@ -9,6 +9,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
 } from "firebase/auth";
+import { getFirebaseErrorMessage } from "@/utils/firebaseErrors";
 
 // Helper function to format Firebase UserCredential to expected format
 const formatAuthResponse = async (userCredential: UserCredential): Promise<{ accessToken: string }> => {
@@ -43,29 +44,10 @@ export const registerWithEmailAndPassword = async (email: string, password: stri
   } catch (error: unknown) {
     const errorCode = error instanceof FirebaseError ? error.code : undefined;
     const errorMessage = error instanceof FirebaseError ? error.message : undefined;
-
-    if (errorCode === 'auth/invalid-email') {
-      throw new Error('Invalid email address');
-    }
-
-    if (errorCode === 'auth/invalid-password') {
-      throw new Error('Invalid password');
-    }
-
-    if (errorCode === 'auth/email-already-in-use') {
-      throw new Error('Email address is already in use');
-    }
-
-    if (errorCode === 'auth/weak-password') {
-      throw new Error('Password is too weak');
-    }
-
-    if (errorCode === 'auth/too-many-requests') {
-      throw new Error('Too many requests. Please try again later');
-    }
-
-    if (errorCode === 'auth/network-request-failed') {
-      throw new Error('Network error. Please check your connection');
+    
+    const friendlyMessage = getFirebaseErrorMessage(errorCode);
+    if (friendlyMessage) {
+      throw new Error(friendlyMessage);
     }
 
     throw new Error(errorMessage || 'Registration failed');
@@ -93,28 +75,10 @@ export const loginWithEmailAndPassword = async (email: string, password: string)
     const errorMessage = error instanceof FirebaseError ? error.message : undefined;
 
     console.log('errorCode', errorCode);
-    if (errorCode === 'auth/invalid-credential' || errorCode === 'auth/invalid-email' || errorCode === 'auth/wrong-password' || errorCode === 'auth/weak-password') {
-      throw new Error('The email address or password is invalid.');
-    }
-
-    if (errorCode === 'auth/user-not-found') {
-      throw new Error('There is no user record corresponding to these credentials.');
-    }
-
-    if (errorCode === 'auth/user-disabled') {
-      throw new Error('This account has been disabled');
-    }
-
-    if (errorCode === 'auth/too-many-requests') {
-      throw new Error('Too many failed login attempts. Please try again later');
-    }
-
-    if (errorCode === 'auth/network-request-failed') {
-      throw new Error('Network error. Please check your connection');
-    }
-
-    if (errorCode === 'auth/operation-not-allowed') {
-      throw new Error('This sign-in method is not enabled');
+    
+    const friendlyMessage = getFirebaseErrorMessage(errorCode);
+    if (friendlyMessage) {
+      throw new Error(friendlyMessage);
     }
 
     throw new Error(errorMessage || 'Login failed');
@@ -126,8 +90,15 @@ export const signInWithGoogle = async (): Promise<{ accessToken: string }> => {
     const userCredential = await signInWithPopup(auth, googleProvider);
     return await formatAuthResponse(userCredential);
   } catch (error: unknown) {
-    const errorMessage = error instanceof FirebaseError ? error.message : 'Google Login failed';
-    throw new Error(errorMessage);
+    const errorCode = error instanceof FirebaseError ? error.code : undefined;
+    const errorMessage = error instanceof FirebaseError ? error.message : undefined;
+
+    const friendlyMessage = getFirebaseErrorMessage(errorCode);
+    if (friendlyMessage) {
+      throw new Error(friendlyMessage);
+    }
+
+    throw new Error(errorMessage || 'Google sign-in failed');
   }
 }
 
@@ -136,8 +107,15 @@ export const signInWithFacebook = async (): Promise<{ accessToken: string }> => 
     const userCredential = await signInWithPopup(auth, facebookProvider);
     return await formatAuthResponse(userCredential);
   } catch (error: unknown) {
-    const errorMessage = error instanceof FirebaseError ? error.message : 'Facebook Login failed';
-    throw new Error(errorMessage);
+    const errorCode = error instanceof FirebaseError ? error.code : undefined;
+    const errorMessage = error instanceof FirebaseError ? error.message : undefined;
+
+    const friendlyMessage = getFirebaseErrorMessage(errorCode);
+    if (friendlyMessage) {
+      throw new Error(friendlyMessage);
+    }
+
+    throw new Error(errorMessage || 'Facebook sign-in failed');
   }
 }
 
@@ -146,8 +124,15 @@ export const signInWithGithub = async (): Promise<{ accessToken: string }> => {
     const userCredential = await signInWithPopup(auth, githubProvider);
     return await formatAuthResponse(userCredential);
   } catch (error: unknown) {
-    const errorMessage = error instanceof FirebaseError ? error.message : 'Github Login failed';
-    throw new Error(errorMessage);
+    const errorCode = error instanceof FirebaseError ? error.code : undefined;
+    const errorMessage = error instanceof FirebaseError ? error.message : undefined;
+
+    const friendlyMessage = getFirebaseErrorMessage(errorCode);
+    if (friendlyMessage) {
+      throw new Error(friendlyMessage);
+    }
+
+    throw new Error(errorMessage || 'GitHub sign-in failed');
   }
 }
 
@@ -166,17 +151,14 @@ export const refreshAccessToken = async (): Promise<string> => {
 // auth.currentUser can be null immediately after refresh before Firebase loads the session
 export const checkSession = async (): Promise<boolean> => {
   return new Promise((resolve) => {
-    // If we're on server-side, resolve immediately as false
     if (typeof window === 'undefined') {
       resolve(false);
       return;
     }
 
     // Use onAuthStateChanged to wait for Firebase to restore the session
-    // This will fire once Firebase has finished checking auth state (even on refresh)
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      // Unsubscribe immediately after first callback to avoid memory leaks
-      unsubscribe();
+      unsubscribe(); // Unsubscribe immediately after first callback to avoid memory leaks
       resolve(!!user);
     });
   });

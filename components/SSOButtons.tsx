@@ -16,11 +16,49 @@ export default function SSOButtons({ label = 'or sign in with', disabled = false
 
   // Redirect to dashboard on successful SSO sign-in (only for SSO, not email login)
   useEffect(() => {
-    if (state.matches('success') && state.context.authResponse && isSSOInitiatedRef.current) {
+    // Check if we're currently in an SSO state to track initiation
+    const isInSSOState = state.matches('signingInWithGoogle') || 
+      state.matches('signingInWithGithub') || 
+      state.matches('signingInWithFacebook');
+    
+    if (isInSSOState) {
+      isSSOInitiatedRef.current = true;
+    }
+    
+    // Redirect on success if SSO was initiated
+    const isSSOSuccess = state.matches('success') && 
+      state.context.authResponse && 
+      isSSOInitiatedRef.current;
+    
+    if (isSSOSuccess) {
+      console.log('SSO sign-in successful, redirecting to dashboard...', {
+        state: state.value,
+        hasAuthResponse: !!state.context.authResponse,
+        isSSOInitiated: isSSOInitiatedRef.current
+      });
+
+      // Redirect immediately - don't wait
       router.push('/dashboard');
-      isSSOInitiatedRef.current = false; // Reset flag
+      isSSOInitiatedRef.current = false; // Reset flag after redirect
     }
   }, [state, router]);
+  
+  // Debug: Log state changes for SSO
+  useEffect(() => {
+    if (state.matches('signingInWithGithub') || state.matches('signingInWithGoogle') || state.matches('signingInWithFacebook')) {
+      console.log('SSO sign-in in progress:', state.value);
+    }
+    if (state.matches('success')) {
+      console.log('Login machine reached success state:', {
+        hasAuthResponse: !!state.context.authResponse,
+        isSSOInitiated: isSSOInitiatedRef.current,
+        error: state.context.error
+      });
+    }
+    if (state.context.error) {
+      console.error('SSO error:', state.context.error);
+    }
+  }, [state]);
 
   const isSSOLoading = state.matches('signingInWithGoogle') || 
     state.matches('signingInWithGithub') || 
@@ -31,6 +69,11 @@ export default function SSOButtons({ label = 'or sign in with', disabled = false
       <p className="mb-4 text-center text-sm text-secondary-foreground">
         {label}
       </p>
+      {state.context.error && (
+        <div className="mb-3 rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
+          {state.context.error}
+        </div>
+      )}
       <div 
         className="flex justify-center gap-6 [&>button]:text-white [&>button]:bg-primary 
         [&>button]:rounded-full [&>button]:px-2 [&>button]:py-1 [&>button]:border [&>button]:border-border 

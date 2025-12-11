@@ -1,5 +1,6 @@
-import { getAuth } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, FacebookAuthProvider, GithubAuthProvider } from "firebase/auth";
 import { initializeApp, getApps } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
 
 // Only initialize if not already initialized (prevents duplicate initialization)
 let app;
@@ -20,5 +21,10 @@ if (getApps().length === 0) {
 }
 
 const auth = getAuth(app);
+const db = getFirestore(app);
 
-export { auth, app };
+const googleProvider = new GoogleAuthProvider();
+const githubProvider = new GithubAuthProvider();
+const facebookProvider = new FacebookAuthProvider();
+
+export { auth, app, db, googleProvider, githubProvider, facebookProvider };

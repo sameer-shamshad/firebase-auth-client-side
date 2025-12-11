@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useMachine } from '@xstate/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import loginMachine from '@/machines/LoginMachine';
+import SSOButtons from '@/components/SSOButtons';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,7 +21,8 @@ export default function LoginPage() {
     }
   }, [searchParams, send]);
 
-  // Redirect to dashboard on successful login
+  // Redirect to dashboard on successful email/password login
+  // Note: SSOButtons has its own machine instance and handles SSO redirects separately
   useEffect(() => {
     if (state.matches('success') && state.context.authResponse) {
       router.push('/dashboard');
@@ -36,7 +38,11 @@ export default function LoginPage() {
     send({ type: 'CHANGE_FIELD', field, value });
   };
 
-  const isSubmitting = state.matches('submitting');
+
+  const isSubmitting = state.matches('submitting') || 
+    state.matches('signingInWithGoogle') || 
+    state.matches('signingInWithGithub') || 
+    state.matches('signingInWithFacebook');
   const isSuccess = state.matches('success');
 
   return (
@@ -80,7 +86,7 @@ export default function LoginPage() {
           <div>
             <input
               id="password"
-              type="password"
+              type={state.context.showPassword ? 'text' : 'password'}
               value={state.context.password}
               onChange={(e) => handleChange('password', e.target.value)}
               disabled={isSubmitting || isSuccess}
@@ -89,7 +95,8 @@ export default function LoginPage() {
             <button 
               type="button" 
               className="material-symbols-outlined absolute right-3 top-1/2! -translate-y-1/2! cursor-pointer"
-            >visibility</button>
+              onClick={() => send({ type: 'TOGGLE_PASSWORD_VISIBILITY' })}
+            >{state.context.showPassword ? 'visibility_off' : 'visibility'}</button>
           </div>
         </div>
 
@@ -117,21 +124,10 @@ export default function LoginPage() {
         >
           {isSubmitting ? 'Signing in...' : isSuccess ? 'Success!' : 'Sign In'}
         </button>
-        <div>
-          <p className="mb-4 text-center text-sm text-secondary-foreground">
-            or sign in with
-          </p>
-          <div 
-            className="flex justify-center gap-6 [&>button]:text-white [&>button]:bg-primary 
-            [&>button]:rounded-full [&>button]:px-2 [&>button]:py-1 [&>button]:border [&>button]:border-border 
-            [&>button]:transition-colors [&>button]:hover:opacity-80 [&>button]:focus:opacity-90 
-            [&>button]:disabled:cursor-not-allowed [&>button]:disabled:opacity-50"
-          >
-            <button type="button" className="bi bi-google" aria-label="Sign in with Google" />
-            <button type="button" className="bi bi-github" aria-label="Sign in with GitHub" />
-            <button type="button" className="bi bi-facebook" aria-label="Sign in with Facebook" />
-          </div>
-        </div>
+        <SSOButtons
+          disabled={isSubmitting || isSuccess}
+          label="or sign in with"
+        />
 
         <p className="text-center text-sm text-secondary-foreground">
           Don&apos;t have an account?{' '}

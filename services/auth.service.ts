@@ -1,22 +1,14 @@
-import { auth } from "@/lib/firebase";
+import { auth, googleProvider, facebookProvider, githubProvider } from "@/lib/firebase";
 import { FirebaseError } from "firebase/app";
 import { 
   signOut,
   UserCredential,
-  User as FirebaseUser,
   onAuthStateChanged,
   sendEmailVerification,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
+  signInWithPopup,
 } from "firebase/auth";
-
-// Set up auth state listener (empty for now, will be used for Firestore in future)
-// Only initialize on client side
-if (typeof window !== 'undefined') {
-  onAuthStateChanged(auth, () => {
-    // Future: Call Firestore to fetch relevant user info
-  });
-}
 
 // Helper function to format Firebase UserCredential to expected format
 const formatAuthResponse = async (userCredential: UserCredential): Promise<{ accessToken: string }> => {
@@ -100,7 +92,8 @@ export const loginWithEmailAndPassword = async (email: string, password: string)
     const errorCode = error instanceof FirebaseError ? error.code : undefined;
     const errorMessage = error instanceof FirebaseError ? error.message : undefined;
 
-    if (errorCode === 'auth/invalid-email' || errorCode === 'auth/wrong-password' || errorCode === 'auth/weak-password') {
+    console.log('errorCode', errorCode);
+    if (errorCode === 'auth/invalid-credential' || errorCode === 'auth/invalid-email' || errorCode === 'auth/wrong-password' || errorCode === 'auth/weak-password') {
       throw new Error('The email address or password is invalid.');
     }
 
@@ -128,6 +121,36 @@ export const loginWithEmailAndPassword = async (email: string, password: string)
   }
 }
 
+export const signInWithGoogle = async (): Promise<{ accessToken: string }> => {
+  try {
+    const userCredential = await signInWithPopup(auth, googleProvider);
+    return await formatAuthResponse(userCredential);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof FirebaseError ? error.message : 'Google Login failed';
+    throw new Error(errorMessage);
+  }
+}
+
+export const signInWithFacebook = async (): Promise<{ accessToken: string }> => {
+  try {
+    const userCredential = await signInWithPopup(auth, facebookProvider);
+    return await formatAuthResponse(userCredential);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof FirebaseError ? error.message : 'Facebook Login failed';
+    throw new Error(errorMessage);
+  }
+}
+
+export const signInWithGithub = async (): Promise<{ accessToken: string }> => {
+  try {
+    const userCredential = await signInWithPopup(auth, githubProvider);
+    return await formatAuthResponse(userCredential);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof FirebaseError ? error.message : 'Github Login failed';
+    throw new Error(errorMessage);
+  }
+}
+
 // Refresh the ID token (Firebase handles this automatically, but we can force refresh)
 export const refreshAccessToken = async (): Promise<string> => {
   const user = auth.currentUser;
@@ -138,10 +161,25 @@ export const refreshAccessToken = async (): Promise<string> => {
   return await user.getIdToken(true);
 }
 
-// Check if user session is valid
+// Check if user session is valid using onAuthStateChanged
+// This is the reliable way to check auth state, especially after page refresh
+// auth.currentUser can be null immediately after refresh before Firebase loads the session
 export const checkSession = async (): Promise<boolean> => {
-  const user: FirebaseUser | null = auth.currentUser;
-  return !!user;
+  return new Promise((resolve) => {
+    // If we're on server-side, resolve immediately as false
+    if (typeof window === 'undefined') {
+      resolve(false);
+      return;
+    }
+
+    // Use onAuthStateChanged to wait for Firebase to restore the session
+    // This will fire once Firebase has finished checking auth state (even on refresh)
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      // Unsubscribe immediately after first callback to avoid memory leaks
+      unsubscribe();
+      resolve(!!user);
+    });
+  });
 }
 
 export const logoutUser = async (): Promise<void> => {

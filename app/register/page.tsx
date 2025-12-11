@@ -1,47 +1,19 @@
 'use client';
 
 import { useMachine } from '@xstate/react';
-// import { useRouter } from 'next/navigation';
-// import { useEffect } from 'react';
 import Link from 'next/link';
 import registerMachine from '@/machines/RegisterMachine';
-// import { loginWithEmailAndPassword } from '@/services/auth.service';
+import SSOButtons from '@/components/SSOButtons';
 
 export default function RegisterPage() {
-  // const router = useRouter(); // Commented out: Not needed until auto-login is re-enabled
   const [state, send] = useMachine(registerMachine);
-
-  // Auto-login after successful registration
-  // Commented out: Users need to verify their email before logging in
-  // TODO: Re-enable this in future when email verification is optional or after verification
-  // useEffect(() => {
-  //   if (state.matches('success')) {
-  //     if (state.context.authResponse) {
-  //       router.push('/dashboard');
-  //     } else {
-  //       // If registration didn't return tokens, auto-login with the credentials
-  //       // Capture credentials before form is cleared
-  //       const { email, password } = state.context;
-  //       if (email && password) {
-  //         loginWithEmailAndPassword(email, password).then(() => {
-  //             router.push('/dashboard');
-  //         }).catch((error) => {
-  //           console.error('Auto-login failed:', error);
-  //         });
-  //       }
-  //     }
-  //   }
-  // }, [state, router]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     send({ type: 'SUBMIT' });
   };
 
-  const handleChange = (
-    field: 'email' | 'password' | 'confirmPassword',
-    value: string
-  ) => {
+  const handleChange = (field: 'email' | 'password' | 'confirmPassword', value: string) => {
     send({ type: 'CHANGE_FIELD', field, value });
   };
 
@@ -119,22 +91,10 @@ export default function RegisterPage() {
         >
           {isSubmitting ? 'Creating account...' : isSuccess ? 'Success!' : 'Sign Up'}
         </button>
-        <div>
-          <p className="mb-3 text-center text-sm text-secondary-foreground">
-            or sign up with
-          </p>
-          <div 
-            className="flex justify-center gap-6 [&>button]:text-white [&>button]:bg-primary 
-              [&>button]:rounded-full [&>button]:px-2 [&>button]:py-1 [&>button]:border [&>button]:border-border 
-              [&>button]:transition-colors [&>button]:hover:opacity-80 [&>button]:focus:outline-none 
-              [&>button]:focus:ring-2 [&>button]:focus:ring-offset-2 [&>button]:disabled:cursor-not-allowed 
-              [&>button]:disabled:opacity-50"
-          >
-            <button type="button" className="bi bi-google" aria-label="Sign up with Google" />
-            <button type="button" className="bi bi-github" aria-label="Sign up with GitHub" />
-            <button type="button" className="bi bi-facebook" aria-label="Sign up with Facebook" />
-          </div>
-        </div>
+        <SSOButtons
+          disabled={isSubmitting || isSuccess}
+          label="or sign up with"
+        />
 
         <p className="text-center text-sm text-secondary-foreground">
           Already have an account?{' '}

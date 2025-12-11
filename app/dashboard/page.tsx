@@ -1,12 +1,39 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { logoutUser } from '@/services/auth.service';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 export default function Dashboard() {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Console log userCredential on mount and when auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
+      if (user) {
+        // Log the user object (which contains userCredential data)
+        console.log('User Credential (onAuthStateChanged):', {
+          uid: user.uid,
+          email: user.email,
+          emailVerified: user.emailVerified,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          providerData: user.providerData,
+          metadata: {
+            creationTime: user.metadata.creationTime,
+            lastSignInTime: user.metadata.lastSignInTime,
+          },
+        });
+      } else {
+        console.log('No user authenticated');
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleSignOut = async () => {
     try {

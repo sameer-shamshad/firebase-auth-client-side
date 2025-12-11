@@ -1,9 +1,9 @@
+import "./globals.css";
+import App from "./App";
+import "./globalIcons.css";
 import type { Metadata } from "next";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { Plus_Jakarta_Sans } from "next/font/google";
-import "./googleIcons.css";
-import "./globals.css";
-import App from "./App";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-jakarta-sans",

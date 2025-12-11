@@ -1,37 +1,154 @@
 import { auth } from "@/lib/firebase";
 import { FirebaseError } from "firebase/app";
 import { 
+  signOut,
+  UserCredential,
+  User as FirebaseUser,
+  onAuthStateChanged,
   sendEmailVerification,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
 } from "firebase/auth";
 
-export const login = async (email: string, password: string) => {
+// Set up auth state listener (empty for now, will be used for Firestore in future)
+// Only initialize on client side
+if (typeof window !== 'undefined') {
+  onAuthStateChanged(auth, () => {
+    // Future: Call Firestore to fetch relevant user info
+  });
+}
+
+// Helper function to format Firebase UserCredential to expected format
+const formatAuthResponse = async (userCredential: UserCredential): Promise<{ accessToken: string }> => {
+  const user = userCredential.user;
+  const idToken = await user.getIdToken();
+  
+  return {
+    accessToken: idToken,
+  };
+};
+
+export const registerWithEmailAndPassword = async (email: string, password: string): Promise<{ accessToken: string }> => {
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    return userCredential;
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+    // Get the current domain dynamically (client-side) or use env variable (server-side)
+    const getBaseUrl = (): string => {
+      if (typeof window !== 'undefined') {
+        return window.location.origin;
+      }
+      return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    };
+
+    const continueUrl = `${getBaseUrl()}/login?email=${encodeURIComponent(email)}`;
+
+    await sendEmailVerification(userCredential.user, {
+      handleCodeInApp: true,
+      url: continueUrl,
+    });
+
+    return await formatAuthResponse(userCredential);
   } catch (error: unknown) {
-    if (error instanceof FirebaseError) {
-      throw new Error(error.message);
+    const errorCode = error instanceof FirebaseError ? error.code : undefined;
+    const errorMessage = error instanceof FirebaseError ? error.message : undefined;
+
+    if (errorCode === 'auth/invalid-email') {
+      throw new Error('Invalid email address');
     }
-    throw error;
+
+    if (errorCode === 'auth/invalid-password') {
+      throw new Error('Invalid password');
+    }
+
+    if (errorCode === 'auth/email-already-in-use') {
+      throw new Error('Email address is already in use');
+    }
+
+    if (errorCode === 'auth/weak-password') {
+      throw new Error('Password is too weak');
+    }
+
+    if (errorCode === 'auth/too-many-requests') {
+      throw new Error('Too many requests. Please try again later');
+    }
+
+    if (errorCode === 'auth/network-request-failed') {
+      throw new Error('Network error. Please check your connection');
+    }
+
+    throw new Error(errorMessage || 'Registration failed');
   }
 }
 
-export const register = async (email: string, password: string) => {
+export const loginWithEmailAndPassword = async (email: string, password: string): Promise<{ accessToken: string }> => {
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-    await sendEmailVerification(user, {
-      handleCodeInApp: true,
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?email=${email}`,
-    });
-
-    return userCredential;
-  } catch (error: unknown) {
-    if (error instanceof FirebaseError) {
-      throw new Error(error.message);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    
+    // Check if email is verified
+    if (!userCredential.user.emailVerified) { // Sign out the user since email is not verified
+      await signOut(auth);
+      throw new Error('Please verify your email address before logging in. Check your inbox for the verification link.');
     }
-    throw error;
+    
+    return await formatAuthResponse(userCredential);
+  } catch (error: unknown) {
+    // If it's already our custom error, re-throw it
+    if (error instanceof Error && error.message.includes('verify your email')) {
+      throw error;
+    }
+    
+    const errorCode = error instanceof FirebaseError ? error.code : undefined;
+    const errorMessage = error instanceof FirebaseError ? error.message : undefined;
+
+    if (errorCode === 'auth/invalid-email' || errorCode === 'auth/wrong-password' || errorCode === 'auth/weak-password') {
+      throw new Error('The email address or password is invalid.');
+    }
+
+    if (errorCode === 'auth/user-not-found') {
+      throw new Error('There is no user record corresponding to these credentials.');
+    }
+
+    if (errorCode === 'auth/user-disabled') {
+      throw new Error('This account has been disabled');
+    }
+
+    if (errorCode === 'auth/too-many-requests') {
+      throw new Error('Too many failed login attempts. Please try again later');
+    }
+
+    if (errorCode === 'auth/network-request-failed') {
+      throw new Error('Network error. Please check your connection');
+    }
+
+    if (errorCode === 'auth/operation-not-allowed') {
+      throw new Error('This sign-in method is not enabled');
+    }
+
+    throw new Error(errorMessage || 'Login failed');
+  }
+}
+
+// Refresh the ID token (Firebase handles this automatically, but we can force refresh)
+export const refreshAccessToken = async (): Promise<string> => {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error('No user is currently signed in');
+  }
+  // Force refresh the token
+  return await user.getIdToken(true);
+}
+
+// Check if user session is valid
+export const checkSession = async (): Promise<boolean> => {
+  const user: FirebaseUser | null = auth.currentUser;
+  return !!user;
+}
+
+export const logoutUser = async (): Promise<void> => {
+  try {
+    await signOut(auth);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof FirebaseError ? error.message : 'Logout failed';
+    throw new Error(errorMessage);
   }
 }

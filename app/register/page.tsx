@@ -1,43 +1,37 @@
 'use client';
 
 import { useMachine } from '@xstate/react';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+// import { useRouter } from 'next/navigation';
+// import { useEffect } from 'react';
 import Link from 'next/link';
 import registerMachine from '@/machines/RegisterMachine';
-import { login } from '@/services/auth.service';
+// import { loginWithEmailAndPassword } from '@/services/auth.service';
 
 export default function RegisterPage() {
-  const router = useRouter();
+  // const router = useRouter(); // Commented out: Not needed until auto-login is re-enabled
   const [state, send] = useMachine(registerMachine);
 
   // Auto-login after successful registration
-  useEffect(() => {
-    if (state.matches('success')) {
-      if (state.context.authResponse) {
-        // If registration already returned auth tokens, redirect to dashboard
-        router.push('/dashboard');
-      } else {
-        // If registration didn't return tokens, auto-login with the credentials
-        // Capture credentials before form is cleared
-        const { email, password } = state.context;
-        if (email && password) {
-          login(email, password)
-            .then((response) => {
-              localStorage.setItem('accessToken', response.accessToken);
-              localStorage.setItem('refreshToken', response.refreshToken);
-              router.push('/dashboard');
-            })
-            .catch((error) => {
-              // If auto-login fails, show error but user can manually login
-              console.error('Auto-login failed:', error);
-              // Still redirect to login page so user can manually login
-              router.push('/login');
-            });
-        }
-      }
-    }
-  }, [state, router]);
+  // Commented out: Users need to verify their email before logging in
+  // TODO: Re-enable this in future when email verification is optional or after verification
+  // useEffect(() => {
+  //   if (state.matches('success')) {
+  //     if (state.context.authResponse) {
+  //       router.push('/dashboard');
+  //     } else {
+  //       // If registration didn't return tokens, auto-login with the credentials
+  //       // Capture credentials before form is cleared
+  //       const { email, password } = state.context;
+  //       if (email && password) {
+  //         loginWithEmailAndPassword(email, password).then(() => {
+  //             router.push('/dashboard');
+  //         }).catch((error) => {
+  //           console.error('Auto-login failed:', error);
+  //         });
+  //       }
+  //     }
+  //   }
+  // }, [state, router]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +39,7 @@ export default function RegisterPage() {
   };
 
   const handleChange = (
-    field: 'username' | 'email' | 'password' | 'confirmPassword',
+    field: 'email' | 'password' | 'confirmPassword',
     value: string
   ) => {
     send({ type: 'CHANGE_FIELD', field, value });
@@ -69,18 +63,6 @@ export default function RegisterPage() {
         <header className="text-3xl font-extrabold text-primary-foreground text-center">
           Sign Up
         </header>
-
-        <div>
-          <label htmlFor="username">Username</label>
-          <input
-            id="username"
-            type="text"
-            value={state.context.username}
-            onChange={(e) => handleChange('username', e.target.value)}
-            disabled={isSubmitting || isSuccess}
-            placeholder="Enter your username"
-          />
-        </div>
 
         <div>
           <label htmlFor="email">Email</label>
@@ -126,28 +108,16 @@ export default function RegisterPage() {
 
         {isSuccess && (
           <div className="rounded-md bg-green-50 p-3 text-sm text-green-800 dark:bg-green-900/20 dark:text-green-400">
-            Registration successful! Logging you in...
+            Registration successful! Please check your email to verify your account.
           </div>
         )}
 
         <button
           type="submit"
           disabled={isSubmitting || isSuccess}
-          className="bg-primary text-secondary px-4 py-2 mt-5 font-semibold rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          onMouseEnter={(e) => {
-            if (!isSubmitting && !isSuccess) {
-              e.currentTarget.style.opacity = '0.9';
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = '1';
-          }}
+          className="bg-primary text-secondary px-4 py-2 mt-5 font-semibold hover:opacity-90 cursor-pointer rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isSubmitting
-            ? 'Creating account...'
-            : isSuccess
-              ? 'Success!'
-              : 'Sign Up'}
+          {isSubmitting ? 'Creating account...' : isSuccess ? 'Success!' : 'Sign Up'}
         </button>
         <div>
           <p className="mb-3 text-center text-sm text-secondary-foreground">

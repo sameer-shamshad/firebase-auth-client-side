@@ -1,25 +1,23 @@
-import type { User } from "@/types";
 import { assign, fromPromise, setup } from "xstate";
-import { register as registerApi } from "@/services/auth.service";
+import { registerWithEmailAndPassword } from "@/services/auth.service";
 
 const registerMachine = setup({
     types: {
         context: {} as {
-            username: string;
             email: string;
             password: string;
             confirmPassword: string;
             error: string | null;
-            authResponse: { accessToken: string; refreshToken: string; user: User } | null;
+            authResponse: { accessToken: string } | null;
         },
         events: {} as
-            | { type: 'CHANGE_FIELD'; field: 'username' | 'email' | 'password' | 'confirmPassword'; value: string }
+            | { type: 'CHANGE_FIELD'; field: 'email' | 'password' | 'confirmPassword'; value: string }
             | { type: 'SUBMIT' }
             | { type: 'RESET' }
     },
     actors: {
-        register: fromPromise(async ({ input: { username, email, password } }: { input: { username: string; email: string; password: string } }) => {
-            const response = await registerApi(username, email, password);
+        registerWithEmailAndPassword: fromPromise(async ({ input: { email, password } }: { input: { email: string; password: string } }) => {
+            const response = await registerWithEmailAndPassword(email, password);
             return response;
         }),
     },
@@ -29,6 +27,7 @@ const registerMachine = setup({
             return {
                 ...context,
                 [event.field]: event.value,
+                error: null, // Clear error when user starts typing
             };
         }),
         setError: assign(({ context, event }) => {
@@ -39,12 +38,8 @@ const registerMachine = setup({
                 error: errorMessage,
             };
         }),
-        clearError: assign(({ context }) => ({
-            ...context,
-            error: null,
-        })),
+        clearError: assign(({ context }) => ({ ...context, error: null })),
         clearForm: assign(() => ({
-            username: '',
             email: '',
             password: '',
             confirmPassword: '',
@@ -52,15 +47,10 @@ const registerMachine = setup({
             authResponse: null,
         })),
         setValidationError: assign(({ context }) => {
-            const username = context.username.trim();
             const email = context.email.trim();
             const password = context.password.trim();
             const confirmPassword = context.confirmPassword.trim();
 
-            if (!username) {
-                return { ...context, error: 'Username is required' };
-            }
-            
             if (!email) {
                 return { ...context, error: 'Email is required' };
             }
@@ -84,24 +74,17 @@ const registerMachine = setup({
             return context;
         }),
         storeAuth: assign(({ context, event }) => {
-            const output = (event as unknown as { output: { accessToken: string; refreshToken: string; user: User } }).output;
-            localStorage.setItem('accessToken', output.accessToken);
-            localStorage.setItem('refreshToken', output.refreshToken);
-            return {
-                ...context,
-                authResponse: output,
-            };
+            const output = (event as unknown as { output: { accessToken: string } }).output;
+            return { ...context, authResponse: output };
         }),
     },
     guards: {
         isValidForm: ({ context }) => {
-            const username = context.username.trim();
             const email = context.email.trim();
             const password = context.password.trim();
             const confirmPassword = context.confirmPassword.trim();
             
-            return username.length > 0
-                && email.length > 0
+            return email.length > 0
                 && password.length > 6
                 && confirmPassword.length > 6
                 && password === confirmPassword;
@@ -112,7 +95,6 @@ const registerMachine = setup({
     id: 'registerMachine',
     initial: 'idle',
     context: {
-        username: '',
         email: '',
         password: '',
         confirmPassword: '',
@@ -121,7 +103,6 @@ const registerMachine = setup({
     },
     states: {
         idle: {
-            entry: 'clearError',
             on: {
                 CHANGE_FIELD: { actions: 'changeField' },
                 SUBMIT: [
@@ -139,9 +120,8 @@ const registerMachine = setup({
         },
         submitting: {
             invoke: {
-                src: 'register',
+                src: 'registerWithEmailAndPassword',
                 input: ({ context }) => ({
-                    username: context.username,
                     email: context.email,
                     password: context.password,
                 }),

@@ -1,6 +1,5 @@
-import type { User } from "@/types";
 import { assign, fromPromise, setup } from "xstate";
-import { login as loginApi } from "@/services/auth.service";
+import { loginWithEmailAndPassword } from "@/services/auth.service";
 
 const loginMachine = setup({
   types: {
@@ -8,16 +7,16 @@ const loginMachine = setup({
       email: string;
       password: string;
       error: string | null;
-      authResponse: { accessToken: string; refreshToken: string; user: User } | null;
+      authResponse: { accessToken: string } | null;
     },
     events: {} as
-      | { type: 'CHANGE_FIELD'; field: 'email' | 'password' | 'rememberMe'; value: string | boolean }
+      | { type: 'CHANGE_FIELD'; field: 'email' | 'password'; value: string }
       | { type: 'SUBMIT' }
       | { type: 'RESET' },
   },
   actors: {
     login: fromPromise(async ({ input: { email, password } }: { input: { email: string; password: string } }) => {
-      const response = await loginApi(email, password);
+      const response = await loginWithEmailAndPassword(email, password);
 
       return response;
     }),
@@ -43,23 +42,20 @@ const loginMachine = setup({
       })),
       setValidationError: assign(({ context }) => {
         const email = context.email.trim();
-        const password = context.password.trim();
+        const password: string = context.password.trim();
 
         if (!email) {
           return { ...context, error: 'Email is required' };
         }
-        
-        if (!password) {
-          return { ...context, error: 'Password is required' };
+
+        if (password.length <= 6) {
+          return { ...context, error: 'Password is required and must be at least 7 characters long.' };
         }
 
         return context;
       }),
       storeAuth: assign(({ context, event }) => {
-        const output = (event as unknown as { output: { accessToken: string; user: User; refreshToken: string } }).output;
-        localStorage.setItem('accessToken', output.accessToken);
-        localStorage.setItem('refreshToken', output.refreshToken);
-
+        const output = (event as unknown as { output: { accessToken: string } }).output;
         return { ...context, authResponse: output };
       }),
   },
@@ -67,7 +63,7 @@ const loginMachine = setup({
     isValidForm: ({ context }) => {
       const email = context.email.trim();
       const password = context.password.trim();
-      return email.length > 0 && password.length > 0;
+      return email.length > 0 && password.length > 6;
     },
   },
 }).createMachine({

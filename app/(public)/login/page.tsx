@@ -1,13 +1,12 @@
 'use client';
-
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { useMachine } from '@xstate/react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppDispatch } from '@/store/hooks';
-import { fetchProfileFromFirebase } from '@/store/features/AuthReducer';
-import loginMachine from '@/machines/LoginMachine';
 import SSOButtons from '@/components/SSOButtons';
+import loginMachine from '@/machines/auth/LoginMachine';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { fetchProfileFromFirebase } from '@/store/features/AuthReducer';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -77,12 +76,12 @@ export default function LoginPage() {
         [&>div>div>input]:w-full [&>div>div>input]:rounded-md 
         [&>div>div>input]:disabled:cursor-not-allowed [&>div>div>input]:disabled:opacity-50
         [&>div>input]:border [&>div>input]:border-border [&>div>input]:bg-background 
-        [&>div>input]:text-primary-foreground [&>div>input]:px-3 [&>div>input]:py-2 
+        [&>div>input]:text-sm [&>div>input]:text-primary-foreground [&>div>input]:px-3 [&>div>input]:py-3 
         [&>div>input]:focus:outline-none [&>div>input]:focus:ring-2 [&>div>input]:focus:ring-primary 
         [&>div>input]:disabled:cursor-not-allowed [&>div>input]:disabled:opacity-50
         
         [&>div>div>input]:border [&>div>div>input]:border-border [&>div>div>input]:bg-background 
-        [&>div>div>input]:text-primary-foreground [&>div>div>input]:px-3 [&>div>div>input]:py-2 
+        [&>div>div>input]:text-sm [&>div>div>input]:text-primary-foreground [&>div>div>input]:px-3 [&>div>div>input]:py-3 
         [&>div>div>input]:focus:outline-none [&>div>div>input]:focus:ring-2 [&>div>div>input]:focus:ring-primary"
       >
         <header className="text-3xl font-extrabold text-primary-foreground text-center">
@@ -130,7 +129,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => send({ type: 'RESEND_EMAIL' })}
                   disabled={state.context.isResendingEmail || isSubmitting}
-                  className="bg-primary text-secondary px-3 py-2 text-sm font-semibold rounded-md transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="bg-primary text-sm text-secondary px-3 py-3 font-semibold rounded-md transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {state.context.isResendingEmail ? 'Sending...' : 'Resend Verification Email'}
                 </button>
@@ -162,7 +161,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isSubmitting || isSuccess}
-          className="bg-primary text-secondary px-4 py-2 font-semibold rounded-md transition-colors hover:opacity-90
+          className="bg-primary text-sm text-secondary px-4 py-3 font-semibold rounded-md transition-colors hover:opacity-90
           disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting ? 'Signing in...' : isSuccess ? 'Success!' : 'Sign In'}

@@ -9,7 +9,7 @@ export default function Navigation() {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   return (
-    <nav className="w-full flex items-center bg-primary text-secondary py-4 px-8">
+    <nav className="w-full flex items-center bg-primary text-secondary px-4 sm:px-6 md:px-8 py-4">
       <Link
         href="/"
         className="text-md md:text-xl font-extrabold"
@@ -17,7 +17,7 @@ export default function Navigation() {
         Firebase SSO
       </Link>
 
-      <div className='flex items-center gap-0 ml-auto [&>a]:text-sm [&>a]:font-medium [&>a]:transition-colors 
+      <div className='hidden md:flex items-center gap-0 ml-auto [&>a]:text-sm [&>a]:font-medium [&>a]:transition-colors 
         [&>a]:hover:opacity-80 [&>a]:text-primary-foreground [&>a]:px-6 [&>a]:py-2 [&>a]:rounded-full'>
         <Link 
           href="/"
@@ -35,7 +35,7 @@ export default function Navigation() {
 
       <button 
         type="button"
-        className='material-symbols-outlined ml-5 md:ml-10'
+        className='material-symbols-outlined ml-auto md:ml-10'
         onClick={() => setIsDarkMode(!isDarkMode)}
       >light_mode</button>
 
@@ -49,4 +49,3 @@ export default function Navigation() {
     </nav>
   );
 }
-

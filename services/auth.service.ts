@@ -7,6 +7,7 @@ import {
   UserCredential,
   onAuthStateChanged,
   sendEmailVerification,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   signInWithPopup,
@@ -326,5 +327,50 @@ export const resendEmailVerification = async (email: string, password: string): 
     }
 
     throw new Error(errorMessage || 'Failed to resend verification email');
+  }
+}
+
+/**
+ * Send password reset email to the user
+ * @param email - Email address of the user
+ * @returns Promise that resolves when the email is sent
+ */
+export const sendPasswordResetLinkToEmailAddress = async (email: string): Promise<void> => {
+  try {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      throw new Error('Email is required');
+    }
+
+    // Get the current domain dynamically (client-side) or use env variable (server-side)
+    const getBaseUrl = (): string => {
+      if (typeof window !== 'undefined') {
+        return window.location.origin;
+      }
+      return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    };
+
+    const continueUrl = `${getBaseUrl()}/login?email=${encodeURIComponent(trimmedEmail)}`;
+
+    await sendPasswordResetEmail(auth, trimmedEmail, {
+      url: continueUrl,
+      handleCodeInApp: false,
+    });
+  } catch (error: unknown) {
+    const errorCode = error instanceof FirebaseError ? error.code : undefined;
+    const errorMessage = error instanceof FirebaseError ? error.message : undefined;
+    
+    // Check if it's a user not found error
+    if (errorCode === 'auth/user-not-found') {
+      throw new Error('The user is not found, or the credentials are invalid.');
+    }
+    
+    const friendlyMessage = getFirebaseErrorMessage(errorCode);
+    if (friendlyMessage) {
+      throw new Error(friendlyMessage);
+    }
+
+    throw new Error(errorMessage || 'Failed to send password reset email');
   }
 }

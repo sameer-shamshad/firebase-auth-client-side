@@ -36,7 +36,7 @@ html.dark-mode {
   --secondary-text-color: #999;
   --border-color: rgba(255, 255, 255, .2);
   --shadow-color: rgba(255, 255, 255, .2);
-  }
+}
 
 html.dark-mode {
   --color-background: var(--bg-color);

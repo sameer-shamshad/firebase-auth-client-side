@@ -1,9 +1,8 @@
 'use client';
-
-import { useMachine } from '@xstate/react';
 import Link from 'next/link';
-import registerMachine from '@/machines/RegisterMachine';
+import { useMachine } from '@xstate/react';
 import SSOButtons from '@/components/SSOButtons';
+import registerMachine from '@/machines/auth/RegisterMachine';
 
 export default function RegisterPage() {
   const [state, send] = useMachine(registerMachine);
@@ -29,7 +28,7 @@ export default function RegisterPage() {
         [&>div>label]:mb-1 [&>div>label]:block [&>div>label]:text-sm [&>div>label]:font-medium 
         [&>div>label]:text-primary-foreground [&>div>input]:w-full [&>div>input]:rounded-md 
         [&>div>input]:border [&>div>input]:border-border [&>div>input]:bg-background 
-        [&>div>input]:text-primary-foreground [&>div>input]:px-3 [&>div>input]:py-2 
+        [&>div>input]:text-sm [&>div>input]:text-primary-foreground [&>div>input]:px-3 [&>div>input]:py-3 
         [&>div>input]:focus:outline-none [&>div>input]:focus:ring-2 [&>div>input]:focus:ring-primary 
         [&>div>input]:disabled:cursor-not-allowed [&>div>input]:disabled:opacity-50"
       >
@@ -96,7 +95,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={isSubmitting || isCreatingProfile || isSuccess}
-          className="bg-primary text-secondary px-4 py-2 mt-5 font-semibold hover:opacity-90 cursor-pointer rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="bg-primary text-sm text-secondary px-4 py-3 mt-5 font-semibold hover:opacity-90 cursor-pointer rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
           {isSubmitting ? 'Creating account...' : isCreatingProfile ? 'Creating profile...' : isSuccess ? 'Success!' : 'Sign Up'}
           </button>

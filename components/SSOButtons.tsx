@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useMachine } from '@xstate/react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch } from '@/store/hooks';
-import loginMachine from '@/machines/LoginMachine';
+import loginMachine from '@/machines/auth/LoginMachine';
 import { fetchProfileFromFirebase } from '@/store/features/AuthReducer';
 
 interface SSOButtonsProps {

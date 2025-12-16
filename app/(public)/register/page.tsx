@@ -18,6 +18,7 @@ export default function RegisterPage() {
   };
 
   const isSubmitting = state.matches('submitting');
+  const isCreatingProfile = state.matches('creatingProfile');
   const isSuccess = state.matches('success');
 
   return (
@@ -36,63 +37,71 @@ export default function RegisterPage() {
           Sign Up
         </header>
 
-        <div>
+          <div>
           <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            value={state.context.email}
-            onChange={(e) => handleChange('email', e.target.value)}
-            disabled={isSubmitting || isSuccess}
-            placeholder="Enter your email"
-          />
-        </div>
+            <input
+              id="email"
+              type="email"
+              value={state.context.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              disabled={isSubmitting || isCreatingProfile || isSuccess}
+              placeholder="Enter your email"
+            />
+          </div>
 
-        <div>
+          <div>
           <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            value={state.context.password}
-            onChange={(e) => handleChange('password', e.target.value)}
-            disabled={isSubmitting || isSuccess}
-            placeholder="Enter your password (min 7 characters)"
-          />
-        </div>
+            <input
+              id="password"
+              type="password"
+              value={state.context.password}
+              onChange={(e) => handleChange('password', e.target.value)}
+              disabled={isSubmitting || isCreatingProfile || isSuccess}
+              placeholder="Enter your password (min 7 characters)"
+            />
+          </div>
 
-        <div>
+          <div>
           <label htmlFor="confirmPassword">Confirm Password</label>
-          <input
-            id="confirmPassword"
-            type="password"
-            value={state.context.confirmPassword}
-            onChange={(e) => handleChange('confirmPassword', e.target.value)}
-            disabled={isSubmitting || isSuccess}
-            placeholder="Confirm your password"
-          />
-        </div>
-
-        {state.context.error && (
-          <div className="rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
-            {state.context.error}
+            <input
+              id="confirmPassword"
+              type="password"
+              value={state.context.confirmPassword}
+              onChange={(e) => handleChange('confirmPassword', e.target.value)}
+              disabled={isSubmitting || isCreatingProfile || isSuccess}
+              placeholder="Confirm your password"
+            />
           </div>
-        )}
 
-        {isSuccess && (
-          <div className="rounded-md bg-green-50 p-3 text-sm text-green-800 dark:bg-green-900/20 dark:text-green-400">
+          {state.context.error && (
+            <div className="rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
+              {state.context.error}
+            </div>
+          )}
+
+          {state.context.profileCreationError && (
+            <div className="rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
+              <div className="mb-1 font-semibold">Profile Creation Warning</div>
+              <div>{state.context.profileCreationError}</div>
+              <div className="mt-2 text-xs">Your account was created successfully, but we couldn&apos;t create your profile. You can still verify your email and login.</div>
+            </div>
+          )}
+
+          {isSuccess && (
+            <div className="rounded-md bg-green-50 p-3 text-sm text-green-800 dark:bg-green-900/20 dark:text-green-400">
             Registration successful! Please check your email to verify your account.
-          </div>
-        )}
+            </div>
+          )}
 
-        <button
-          type="submit"
-          disabled={isSubmitting || isSuccess}
+          <button
+            type="submit"
+            disabled={isSubmitting || isCreatingProfile || isSuccess}
           className="bg-primary text-secondary px-4 py-2 mt-5 font-semibold hover:opacity-90 cursor-pointer rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isSubmitting ? 'Creating account...' : isSuccess ? 'Success!' : 'Sign Up'}
-        </button>
+          >
+          {isSubmitting ? 'Creating account...' : isCreatingProfile ? 'Creating profile...' : isSuccess ? 'Success!' : 'Sign Up'}
+          </button>
         <SSOButtons
-          disabled={isSubmitting || isSuccess}
+          disabled={isSubmitting || isCreatingProfile || isSuccess}
           label="or sign up with"
         />
 

@@ -2,6 +2,8 @@
 import { useEffect, useRef } from 'react';
 import { useMachine } from '@xstate/react';
 import { useRouter } from 'next/navigation';
+import { useAppDispatch } from '@/store/hooks';
+import { fetchProfileFromFirebase } from '@/store/features/AuthReducer';
 import loginMachine from '@/machines/LoginMachine';
 
 interface SSOButtonsProps {
@@ -11,6 +13,7 @@ interface SSOButtonsProps {
 
 export default function SSOButtons({ label = 'or sign in with', disabled = false }: SSOButtonsProps) {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [state, send] = useMachine(loginMachine);
   const isSSOInitiatedRef = useRef(false);
 
@@ -31,34 +34,13 @@ export default function SSOButtons({ label = 'or sign in with', disabled = false
       isSSOInitiatedRef.current;
     
     if (isSSOSuccess) {
-      console.log('SSO sign-in successful, redirecting to dashboard...', {
-        state: state.value,
-        hasAuthResponse: !!state.context.authResponse,
-        isSSOInitiated: isSSOInitiatedRef.current
-      });
-
-      // Redirect immediately - don't wait
-      router.push('/dashboard');
-      isSSOInitiatedRef.current = false; // Reset flag after redirect
-    }
-  }, [state, router]);
-  
-  // Debug: Log state changes for SSO
-  useEffect(() => {
-    if (state.matches('signingInWithGithub') || state.matches('signingInWithGoogle') || state.matches('signingInWithFacebook')) {
-      console.log('SSO sign-in in progress:', state.value);
-    }
-    if (state.matches('success')) {
-      console.log('Login machine reached success state:', {
-        hasAuthResponse: !!state.context.authResponse,
-        isSSOInitiated: isSSOInitiatedRef.current,
-        error: state.context.error
+      // Fetch profile from Firestore after successful SSO login
+      dispatch(fetchProfileFromFirebase()).then(() => {
+        router.push('/dashboard'); // Redirect after profile is fetched
+        isSSOInitiatedRef.current = false; // Reset flag after redirect
       });
     }
-    if (state.context.error) {
-      console.error('SSO error:', state.context.error);
-    }
-  }, [state]);
+  }, [state, router, dispatch]);
 
   const isSSOLoading = state.matches('signingInWithGoogle') || 
     state.matches('signingInWithGithub') || 

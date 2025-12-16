@@ -4,12 +4,15 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import { useMachine } from '@xstate/react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAppDispatch } from '@/store/hooks';
+import { fetchProfileFromFirebase } from '@/store/features/AuthReducer';
 import loginMachine from '@/machines/LoginMachine';
 import SSOButtons from '@/components/SSOButtons';
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const dispatch = useAppDispatch();
   const [state, send] = useMachine(loginMachine);
 
   // Fetch email from URL query parameters and pre-fill the form
@@ -21,28 +24,46 @@ export default function LoginPage() {
     }
   }, [searchParams, send]);
 
-  // Redirect to dashboard on successful email/password login
+  // Redirect to dashboard on successful email/password login and fetch profile
   // Note: SSOButtons has its own machine instance and handles SSO redirects separately
   useEffect(() => {
     if (state.matches('success') && state.context.authResponse) {
-      router.push('/dashboard');
+      // Fetch profile from Firestore after successful login
+      dispatch(fetchProfileFromFirebase()).then(() => {
+        router.push('/dashboard'); // Redirect after profile is fetched
+      });
     }
-  }, [state, router]);
+  }, [state, router, dispatch]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     send({ type: 'SUBMIT' });
   };
 
+  // Auto-hide resend success message after 5 seconds
+  useEffect(() => {
+    if (state.context.resendSuccess) {
+      const timer = setTimeout(() => {
+        send({ type: 'CLEAR_RESEND_SUCCESS' });
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [state.context.resendSuccess, send]);
+
   const handleChange = (field: 'email' | 'password', value: string) => {
     send({ type: 'CHANGE_FIELD', field, value });
   };
 
+  // Check if error is about email confirmation
+  const isEmailConfirmationError = state.context.error?.toLowerCase().includes('verify your email') || 
+    state.context.error?.toLowerCase().includes('email not confirmed') ||
+    state.context.error?.toLowerCase().includes('email_not_confirmed');
 
   const isSubmitting = state.matches('submitting') || 
     state.matches('signingInWithGoogle') || 
     state.matches('signingInWithGithub') || 
-    state.matches('signingInWithFacebook');
+    state.matches('signingInWithFacebook') ||
+    state.matches('resendingEmail');
   const isSuccess = state.matches('success');
 
   return (
@@ -102,7 +123,29 @@ export default function LoginPage() {
 
         {state.context.error && (
           <div className="rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
-            {state.context.error}
+            <div className="mb-2">{state.context.error}</div>
+            {isEmailConfirmationError && (
+              <div className="mt-3 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => send({ type: 'RESEND_EMAIL' })}
+                  disabled={state.context.isResendingEmail || isSubmitting}
+                  className="bg-primary text-secondary px-3 py-2 text-sm font-semibold rounded-md transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {state.context.isResendingEmail ? 'Sending...' : 'Resend Verification Email'}
+                </button>
+                {state.context.resendSuccess && (
+                  <div className="rounded-md bg-green-50 p-2 text-xs text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                    Verification email sent! Please check your inbox.
+                  </div>
+                )}
+                {state.context.resendError && (
+                  <div className="rounded-md bg-red-50 p-2 text-xs text-red-800 dark:bg-red-900/20 dark:text-red-400">
+                    {state.context.resendError}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

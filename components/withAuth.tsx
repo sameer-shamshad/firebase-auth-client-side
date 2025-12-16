@@ -74,10 +74,10 @@ export default function withAuth<P extends object>(Component: React.ComponentTyp
       return (
         <div className="flex items-center justify-center min-h-screen bg-background">
           <div className="w-full max-w-md border border-border bg-background p-6 rounded-2xl flex flex-col gap-4 text-center">
-            <h1 className="text-2xl font-bold text-primary-foreground">
+            <h1 className="text-2xl font-bold text-left text-primary-foreground">
               Authentication Required
             </h1>
-            <p className="text-sm text-secondary-foreground">
+            <p className="text-sm text-secondary-foreground text-left">
               The route you are trying to access requires sign-in. Please sign in to continue.
             </p>
             <button
@@ -85,7 +85,7 @@ export default function withAuth<P extends object>(Component: React.ComponentTyp
               onClick={() => router.push('/login')}
               className="bg-primary text-sm text-secondary px-4 py-3 font-semibold rounded-md transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
             >
-              Go to Sign In
+              Sign In
             </button>
           </div>
         </div>

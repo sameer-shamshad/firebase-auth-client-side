@@ -85,7 +85,7 @@ export default function withAuth<P extends object>(Component: React.ComponentTyp
               onClick={() => router.push('/login')}
               className="bg-primary text-sm text-secondary px-4 py-3 font-semibold rounded-md transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
             >
-              Go to Sign In
+              Sign In
             </button>
           </div>
         </div>

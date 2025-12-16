@@ -18,10 +18,8 @@ const ensureUserProfile = async (userCredential: UserCredential): Promise<void> 
     const user = userCredential.user;
     if (user.email) {
       // Extract username from displayName, email, or provider data
-      const username = user.displayName || 
-                      user.email.split('@')[0] || 
-                      'user';
-      
+      const username = user.displayName || user.email.split('@')[0] || '';
+
       await createOrUpdateUserProfile(user.uid, user.email, username);
     }
   } catch {

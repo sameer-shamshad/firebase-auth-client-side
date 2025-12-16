@@ -9,6 +9,7 @@ type AuthState = {
   user: User | null;
   isLoading: boolean;
   error: string | null;
+  isAuthenticated: boolean;
 }
 
 const USER_STORAGE_KEY = 'user_profile';
@@ -48,6 +49,7 @@ const getInitialContext = (): AuthState => {
     user: user,
     error: null,
     isLoading: false,
+    isAuthenticated: !!user, // Set based on whether user exists in localStorage
   };
 };
 
@@ -97,7 +99,14 @@ export const initializeAuth = createAsyncThunk<
         return { user: null, isAuthenticated: false };
       }
       
-      // User is authenticated, try to fetch fresh user from Firestore
+      // User is authenticated, check localStorage first (avoid unnecessary Firestore call)
+      const cachedUser = loadUserFromStorage();
+      if (cachedUser) {
+        // User exists in localStorage, use it without calling Firestore
+        return { user: cachedUser, isAuthenticated: true };
+      }
+      
+      // No user in localStorage, fetch from Firestore
       try {
         const user = await fetchUserProfile();
         if (user) {
@@ -105,14 +114,11 @@ export const initializeAuth = createAsyncThunk<
           return { user, isAuthenticated: true };
         }
       } catch {
-        // If fetch fails, try to load from localStorage
-        const cachedUser = loadUserFromStorage();
-        if (cachedUser) {
-          return { user: cachedUser, isAuthenticated: true };
-        }
+        // If fetch fails, user profile might not exist yet
+        // Return null but keep session valid (profile can be created later)
       }
       
-      // No user found, clear state
+      // No user found in Firestore, clear state
       saveUserToStorage(null);
       return { user: null, isAuthenticated: false };
     } catch (error) {
@@ -156,6 +162,7 @@ const authReducer = createReducer(initialState, (builder) => {
     })
     .addCase(initializeAuth.fulfilled, (state, action) => {
       state.user = action.payload.user;
+      state.isAuthenticated = action.payload.isAuthenticated;
       state.isLoading = false;
       state.error = null;
       // Ensure localStorage is in sync with Redux state
@@ -163,6 +170,7 @@ const authReducer = createReducer(initialState, (builder) => {
     })
     .addCase(initializeAuth.rejected, (state, action) => {
       state.user = null;
+      state.isAuthenticated = false;
       state.isLoading = false;
       state.error = action.payload || 'Failed to initialize auth';
       saveUserToStorage(null);
@@ -174,6 +182,7 @@ const authReducer = createReducer(initialState, (builder) => {
     })
     .addCase(fetchProfileFromFirebase.fulfilled, (state, action) => {
       state.user = action.payload;
+      state.isAuthenticated = !!action.payload; // Set based on whether user was fetched
       state.isLoading = false;
       state.error = null;
       // Ensure localStorage is in sync with Redux state
@@ -182,6 +191,7 @@ const authReducer = createReducer(initialState, (builder) => {
     .addCase(fetchProfileFromFirebase.rejected, (state, action) => {
       // Clear user if fetch fails (user not authenticated)
       state.user = null;
+      state.isAuthenticated = false;
       state.isLoading = false;
       state.error = action.payload || 'Failed to fetch user';
       saveUserToStorage(null);
@@ -193,22 +203,26 @@ const authReducer = createReducer(initialState, (builder) => {
     })
     .addCase(logoutThunk.fulfilled, (state) => {
       state.user = null;
+      state.isAuthenticated = false;
       state.isLoading = false;
       state.error = null;
     })
     .addCase(logoutThunk.rejected, (state) => {
       state.user = null;
+      state.isAuthenticated = false;
       state.isLoading = false;
       state.error = null;
     })
     // Set user action
     .addCase(setUser, (state, action) => {
       state.user = action.payload;
+      state.isAuthenticated = !!action.payload;
       saveUserToStorage(action.payload);
     })
     // Clear auth action
     .addCase(clearAuth, (state) => {
       state.user = null;
+      state.isAuthenticated = false;
       saveUserToStorage(null);
     })
     .addCase(setError, (state, action) => {
@@ -220,4 +234,3 @@ const authReducer = createReducer(initialState, (builder) => {
 });
 
 export default authReducer;
-

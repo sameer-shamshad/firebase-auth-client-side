@@ -3,8 +3,8 @@ import { useEffect, useRef } from 'react';
 import { useMachine } from '@xstate/react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch } from '@/store/hooks';
-import { fetchProfileFromFirebase } from '@/store/features/AuthReducer';
 import loginMachine from '@/machines/LoginMachine';
+import { fetchProfileFromFirebase } from '@/store/features/AuthReducer';
 
 interface SSOButtonsProps {
   label?: string;
